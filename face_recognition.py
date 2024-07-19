@@ -8,20 +8,33 @@ from tkinter import messagebox, simpledialog
 root = tk.Tk()
 root.title("Face Recognition")
 
+# Set the size of the window and center it on the screen
+window_width = 400
+window_height = 200
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+x = (screen_width / 2) - (window_width / 2)
+y = (screen_height / 2) - (window_height / 2)
+root.geometry(f"{window_width}x{window_height}+{int(x)}+{int(y)}")
+
+# Keep the window on top of all other windows
+root.attributes('-topmost', True)
+
 # Create a folder for models if it doesn't exist
 if not os.path.exists('models'):
     os.makedirs('models')
 
+
 # Function to collect face models
 def collect_models():
-    username = simpledialog.askstring("Input", "Please enter your username:")
+    root.attributes('-topmost', False)
+    username = simpledialog.askstring("Input", "Please enter your name:")
     if not username:
-        messagebox.showwarning("Input Error", "Please enter a username.")
+        messagebox.showwarning("Input Error", "Please enter your name.")
         return
 
-    user_folder = os.path.join('models', username)
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
+    # Save the face data directly in the models folder
+    npz_file_path = os.path.join('models', f'{username}_faces.npz')
 
     cap = cv2.VideoCapture(0)
     count = 0
@@ -59,7 +72,7 @@ def collect_models():
             break
 
     # Save collected face data as a compressed NumPy array
-    np.savez_compressed(os.path.join(user_folder, f'{username}_faces.npz'), faces=np.array(collected_faces))
+    np.savez_compressed(npz_file_path, faces=np.array(collected_faces))
 
     cap.release()
     cv2.destroyAllWindows()
@@ -67,6 +80,7 @@ def collect_models():
 
 # Function to verify face
 def verify_face():
+    root.attributes('-topmost', False)
     cap = cv2.VideoCapture(0)
     recognizer = cv2.face.LBPHFaceRecognizer_create()
 
@@ -75,19 +89,15 @@ def verify_face():
     label_map = {}
     current_label = 0
 
-    for user_folder in os.listdir('models'):
-        user_path = os.path.join('models', user_folder)
-        if not os.path.isdir(user_path):  # Skip non-directory files
-            continue
-        for npz_file in os.listdir(user_path):
-            if npz_file.endswith('_faces.npz'):
-                npz_path = os.path.join(user_path, npz_file)
-                data = np.load(npz_path)
-                face_images = data['faces']
-                images.extend(face_images)
-                labels.extend([current_label] * len(face_images))
-        label_map[current_label] = user_folder
-        current_label += 1
+    for npz_file in os.listdir('models'):
+        if npz_file.endswith('_faces.npz'):
+            npz_path = os.path.join('models', npz_file)
+            data = np.load(npz_path)
+            face_images = data['faces']
+            images.extend(face_images)
+            labels.extend([current_label] * len(face_images))
+            label_map[current_label] = npz_file.replace('_faces.npz', '')
+            current_label += 1
 
     recognizer.train(images, np.array(labels))
 
