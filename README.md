@@ -10,9 +10,12 @@ Before running the application, you need to install the required Python packages
 
 ```bash
 pip install -r requirements.txt
+```
 
 ```bash
 cd path/to/your/project
+```
 
 ```bash
 python face_recognition.py
+```
