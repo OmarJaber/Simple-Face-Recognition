@@ -3,7 +3,7 @@ import os
 import numpy as np
 import tkinter as tk
 from tkinter import messagebox, simpledialog
-from PIL import Image, ImageTk  # Requires Pillow library
+from PIL import Image, ImageTk
 
 # Initialize the main window
 root = tk.Tk()
@@ -25,10 +25,15 @@ root.attributes('-topmost', True)
 if not os.path.exists('models'):
     os.makedirs('models')
 
-# Load the GIF image
-gif_path = 'instructions.gif'  # Make sure to download a GIF and place it in your project directory
-gif_image = Image.open(gif_path)
-gif_photo = ImageTk.PhotoImage(gif_image)
+# Load the instructions image
+instructions_path = 'instructions.jpg'  # Make sure to place this image in your project directory
+instructions_image = Image.open(instructions_path)
+instructions_image = instructions_image.resize((500, 500))  # Resize as needed
+instructions_photo = ImageTk.PhotoImage(instructions_image)
+
+# Convert PIL Image to OpenCV format
+instructions_cv_image = np.array(instructions_image)
+instructions_cv_image = cv2.cvtColor(instructions_cv_image, cv2.COLOR_RGB2BGR)
 
 # Function to collect face models
 def collect_models():
@@ -44,15 +49,6 @@ def collect_models():
     count = 0
     collected_faces = []
     prev_frame = None
-
-    # Display instructions image in a new window
-    instructions_window = tk.Toplevel(root)
-    instructions_window.title("Instructions")
-    instructions_window.geometry(f"{gif_image.width}x{gif_image.height}")
-    instructions_label = tk.Label(instructions_window, image=gif_photo)
-    instructions_label.pack()
-    instructions_note = tk.Label(instructions_window, text="Please move your head angles for better accuracy", font=("Helvetica", 12))
-    instructions_note.pack()
 
     while count < 200:
         ret, frame = cap.read()
@@ -71,6 +67,10 @@ def collect_models():
 
         prev_frame = gray
 
+        # Overlay the instructions image on the frame
+        cv2.putText(frame, "Please move your head angles for better accuracy", (10, instructions_cv_image.shape[0] + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        frame[0:instructions_cv_image.shape[0], 0:instructions_cv_image.shape[1]] = instructions_cv_image
+
         for (x, y, w, h) in faces:
             count += 1
             face = gray[y:y+h, x:x+w]
@@ -87,7 +87,6 @@ def collect_models():
 
     cap.release()
     cv2.destroyAllWindows()
-    instructions_window.destroy()
     messagebox.showinfo("Collection Complete", f"Collected 200 face models for {username}.")
 
 # Function to verify face
