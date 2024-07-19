@@ -26,7 +26,7 @@ if not os.path.exists('models'):
     os.makedirs('models')
 
 # Load the instructions image
-instructions_path = 'instructions.jpg'  # Make sure to place this image in your project directory
+instructions_path = 'images/instructions.jpg'  # Make sure to place this image in your project directory
 instructions_image = Image.open(instructions_path)
 instructions_image = instructions_image.resize((500, 500))  # Resize as needed
 instructions_photo = ImageTk.PhotoImage(instructions_image)
