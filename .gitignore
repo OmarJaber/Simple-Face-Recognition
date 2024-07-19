@@ -1,0 +1,14 @@
+# Ignore the models directory
+models/
+
+# Ignore Python bytecode files
+*.pyc
+__pycache__/
+
+# Ignore environment files
+.env
+
+# Ignore operating system specific files
+.DS_Store
+Thumbs.db
+
