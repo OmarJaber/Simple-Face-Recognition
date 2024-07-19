@@ -117,7 +117,16 @@ def verify_face():
     verify_window = tk.Toplevel(root)
     verify_window.title("Face Verification")
     verify_window.geometry("640x480")
-    verify_window.protocol("WM_DELETE_WINDOW", lambda: cap.release() or cv2.destroyAllWindows() or verify_window.destroy())
+
+    # Function to handle the close button click
+    def close_verify_window():
+        cap.release()
+        cv2.destroyAllWindows()
+        verify_window.destroy()
+
+    # Add a close button to the verification window
+    close_button = tk.Button(verify_window, text="Close", command=close_verify_window)
+    close_button.pack()
 
     while True:
         ret, frame = cap.read()
