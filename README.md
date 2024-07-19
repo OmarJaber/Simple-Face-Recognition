@@ -51,8 +51,5 @@ python face_recognition.py
    - The application will start the camera and display a verification window.
    - It will detect your face and display the recognized username if it matches any collected model.
 
-3. **Close the Verification Window**
-   - Close the verification window when you are finished.
 
-Enjoy using the **Simple Face Recognition** application! 😊
 
