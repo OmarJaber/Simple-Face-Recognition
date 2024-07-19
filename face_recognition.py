@@ -3,6 +3,7 @@ import os
 import numpy as np
 import tkinter as tk
 from tkinter import messagebox, simpledialog
+from PIL import Image, ImageTk  # Requires Pillow library
 
 # Initialize the main window
 root = tk.Tk()
@@ -24,6 +25,10 @@ root.attributes('-topmost', True)
 if not os.path.exists('models'):
     os.makedirs('models')
 
+# Load the GIF image
+gif_path = 'instructions.gif'  # Make sure to download a GIF and place it in your project directory
+gif_image = Image.open(gif_path)
+gif_photo = ImageTk.PhotoImage(gif_image)
 
 # Function to collect face models
 def collect_models():
@@ -33,7 +38,6 @@ def collect_models():
         messagebox.showwarning("Input Error", "Please enter your name.")
         return
 
-    # Save the face data directly in the models folder
     npz_file_path = os.path.join('models', f'{username}_faces.npz')
 
     cap = cv2.VideoCapture(0)
@@ -41,16 +45,24 @@ def collect_models():
     collected_faces = []
     prev_frame = None
 
-    while count < 200:  # Collect 200 images
+    # Display instructions image in a new window
+    instructions_window = tk.Toplevel(root)
+    instructions_window.title("Instructions")
+    instructions_window.geometry(f"{gif_image.width}x{gif_image.height}")
+    instructions_label = tk.Label(instructions_window, image=gif_photo)
+    instructions_label.pack()
+    instructions_note = tk.Label(instructions_window, text="Please move your head angles for better accuracy", font=("Helvetica", 12))
+    instructions_note.pack()
+
+    while count < 200:
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml').detectMultiScale(gray, 1.3, 5)
 
-        # Motion Detection: Check if there is motion in the frame
         if prev_frame is not None:
             diff = cv2.absdiff(prev_frame, gray)
             non_zero_count = np.count_nonzero(diff)
-            if non_zero_count < 10000:  # Threshold for motion; adjust as needed
+            if non_zero_count < 10000:
                 cv2.putText(frame, "Static Image Detected", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
                 cv2.imshow('Collecting Models', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -71,11 +83,11 @@ def collect_models():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    # Save collected face data as a compressed NumPy array
     np.savez_compressed(npz_file_path, faces=np.array(collected_faces))
 
     cap.release()
     cv2.destroyAllWindows()
+    instructions_window.destroy()
     messagebox.showinfo("Collection Complete", f"Collected 200 face models for {username}.")
 
 # Function to verify face
@@ -84,7 +96,6 @@ def verify_face():
     cap = cv2.VideoCapture(0)
     recognizer = cv2.face.LBPHFaceRecognizer_create()
 
-    # Load and train recognizer with existing models
     images, labels = [], []
     label_map = {}
     current_label = 0
@@ -102,16 +113,22 @@ def verify_face():
     recognizer.train(images, np.array(labels))
 
     prev_frame = None
+
+    # Create a window for verification with a close button
+    verify_window = tk.Toplevel(root)
+    verify_window.title("Face Verification")
+    verify_window.geometry("640x480")
+    verify_window.protocol("WM_DELETE_WINDOW", lambda: cap.release() or cv2.destroyAllWindows() or verify_window.destroy())
+
     while True:
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml').detectMultiScale(gray, 1.3, 5)
 
-        # Motion Detection: Ensure the frame has motion
         if prev_frame is not None:
             diff = cv2.absdiff(prev_frame, gray)
             non_zero_count = np.count_nonzero(diff)
-            if non_zero_count < 10000:  # Threshold for motion; adjust as needed
+            if non_zero_count < 10000:
                 cv2.putText(frame, "Motionless Image Detected", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
                 cv2.imshow('Verify Face', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -124,7 +141,7 @@ def verify_face():
             face = gray[y:y+h, x:x+w]
             face = cv2.resize(face, (200, 200))
             label, confidence = recognizer.predict(face)
-            if confidence < 70:  # Adjust confidence threshold as needed
+            if confidence < 70:
                 username = label_map.get(label, "Unknown")
             else:
                 username = "Unknown"
