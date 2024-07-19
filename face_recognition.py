@@ -92,6 +92,12 @@ def collect_models():
 # Function to verify face
 def verify_face():
     root.attributes('-topmost', False)
+    
+    # Check if there is any training data available
+    if not any(file.endswith('_faces.npz') for file in os.listdir('models')):
+        messagebox.showwarning("No Training Data", "No training data found. Please collect face models first.")
+        return
+
     cap = cv2.VideoCapture(0)
     recognizer = cv2.face.LBPHFaceRecognizer_create()
 
@@ -108,6 +114,11 @@ def verify_face():
             labels.extend([current_label] * len(face_images))
             label_map[current_label] = npz_file.replace('_faces.npz', '')
             current_label += 1
+
+    if len(images) == 0:
+        messagebox.showwarning("No Training Data", "No training data available for recognition.")
+        cap.release()
+        return
 
     recognizer.train(images, np.array(labels))
 
