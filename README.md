@@ -9,11 +9,15 @@ This project provides a simple face recognition application using OpenCV and Pyt
 Before running the application, you need to install the required Python packages. Use the following command to install them:
 
 ```bash
-clone https://github.com/OmarJaber/Simple-Face-Recognition.git
+cd
 ```
 
 ```bash
-cd path/to/Simple-Face-Recognition
+git clone https://github.com/OmarJaber/Simple-Face-Recognition.git
+```
+
+```bash
+cd Simple-Face-Recognition
 ```
 
 ```bash
