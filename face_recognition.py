@@ -25,7 +25,7 @@ def collect_models():
 
     cap = cv2.VideoCapture(0)
     count = 0
-    collected_images = []
+    collected_faces = []
     prev_frame = None
 
     while count < 200:  # Collect 200 images
@@ -50,7 +50,7 @@ def collect_models():
             count += 1
             face = gray[y:y+h, x:x+w]
             face = cv2.resize(face, (200, 200))
-            collected_images.append(face)
+            collected_faces.append(face)
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
             cv2.putText(frame, f'Collecting {count}/200', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
@@ -58,9 +58,8 @@ def collect_models():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    # Save collected images
-    for i, img in enumerate(collected_images):
-        cv2.imwrite(os.path.join(user_folder, f'{username}_{i+1}.jpg'), img)
+    # Save collected face data as a compressed NumPy array
+    np.savez_compressed(os.path.join(user_folder, f'{username}_faces.npz'), faces=np.array(collected_faces))
 
     cap.release()
     cv2.destroyAllWindows()
@@ -71,7 +70,7 @@ def verify_face():
     cap = cv2.VideoCapture(0)
     recognizer = cv2.face.LBPHFaceRecognizer_create()
 
-    # Training recognizer with existing models
+    # Load and train recognizer with existing models
     images, labels = [], []
     label_map = {}
     current_label = 0
@@ -80,11 +79,13 @@ def verify_face():
         user_path = os.path.join('models', user_folder)
         if not os.path.isdir(user_path):  # Skip non-directory files
             continue
-        for image_name in os.listdir(user_path):
-            image_path = os.path.join(user_path, image_name)
-            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-            images.append(image)
-            labels.append(current_label)
+        for npz_file in os.listdir(user_path):
+            if npz_file.endswith('_faces.npz'):
+                npz_path = os.path.join(user_path, npz_file)
+                data = np.load(npz_path)
+                face_images = data['faces']
+                images.extend(face_images)
+                labels.extend([current_label] * len(face_images))
         label_map[current_label] = user_folder
         current_label += 1
 
