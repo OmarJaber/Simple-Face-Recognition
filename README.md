@@ -37,7 +37,7 @@ python face_recognition.py
 
 3. **Follow Instructions**
    - An Instructions window will pop up with the following guidance:
-   	 ![Instructions](images/instructions.jpg)
+   	 ![Instructions](images/instructions.png)
      - **Move your head at different angles** for better accuracy.
 
 4. **Completion**
